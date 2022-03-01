@@ -820,7 +820,8 @@ func toInt*[T: SomeInteger](x: BigInt): Option[T] =
         result = none(T)
       elif x.limbs.len == 2:
         if x.isNegative:
-          if x.limbs[1] > uint32(int32.high) + 1 or (x.limbs[1] == uint32(int32.high) + 1 and x.limbs[0] > 0):
+          if x.limbs[1] > uint32(int32.high) + 1 or (x.limbs[1] == uint32(
+              int32.high) + 1 and x.limbs[0] > 0):
             result = none(T)
           else:
             let value = not T(x.limbs[1].uint64 shl 32 + x.limbs[0] - 1)
@@ -1166,3 +1167,84 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+func getLimbs*(a: BigInt): seq[uint32] =
+  return a.limbs
+
+iterator mitemsReversed[T](a: openarray[T]): T =
+  var i = high(a)
+  while i >= 0:
+    yield a[i]
+    dec i
+
+func fromBytesBE*(data: seq[uint8]): BigInt =
+  ## Convert an integer encoded as big endian bytes to BigInt
+  ## Data length must be divisible by 4
+
+  if len(data) mod 4 != 0:
+    raise newException(ValueError, "Data length needs to be divisible by 4")
+
+  var chunks = newSeq[uint32]()
+  var count = 0
+  var chunk: array[4, uint8]
+
+  when cpuEndian == littleEndian:
+    for i in mitemsReversed(data):
+      chunk[count] = i
+      inc count
+      if count >= 4:
+        chunks.add(cast[uint32](chunk))
+        count = 0
+  else:
+    for i in data:
+      chunk[count] = i
+      inc count
+      if count >= 4:
+        chunks.add(cast[uint32](chunk))
+        count = 0
+  return initBigInt(chunks)
+
+func fromBytesLE*(data: seq[uint8]): BigInt =
+  ## Convert an integer encoded as little endian bytes to BigInt
+  ## Data length must be divisible by 4
+
+  if len(data) mod 4 != 0:
+    raise newException(ValueError, "Data needs to be divisible by 4")
+
+  var chunks = newSeq[uint32]()
+  var count = 0
+  var chunk: array[4, uint8]
+
+  when cpuEndian == littleEndian:
+    for i in mitemsReversed(data):
+      chunk[count] = i
+      inc count
+      if count >= 4:
+        chunks.add(cast[uint32](chunk))
+        count = 0
+  else:
+    for i in data:
+      chunk[count] = i
+      inc count
+      if count >= 4:
+        chunks.add(cast[uint32](chunk))
+        count = 0
+  return initBigInt(chunks)
+
+func toBytesLE*(a: BigInt): seq[uint8] =
+
+  when cpuEndian == bigEndian:
+    for limb in mitemsReversed(a.limbs):
+      result.add(cast[array[4, uint8]](limb)[0..3])
+  else:
+    for limb in a.limbs:
+      result.add(cast[array[4, uint8]](limb)[0..3])
+
+func toBytesBE*(a: BigInt): seq[uint8] =
+
+  when cpuEndian == littleEndian:
+    for limb in mitemsReversed(a.limbs):
+      result.add(cast[array[4, uint8]](limb)[0..3])
+  else:
+    for limb in a.limbs:
+      result.add(cast[array[4, uint8]](limb)[0..3])

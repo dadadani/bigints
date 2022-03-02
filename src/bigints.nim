@@ -1181,9 +1181,6 @@ func fromBytesBE*(data: seq[uint8]): BigInt =
   ## Convert an integer encoded as big endian bytes to BigInt
   ## Data length must be divisible by 4
 
-  if len(data) mod 4 != 0:
-    raise newException(ValueError, "Data length needs to be divisible by 4")
-
   var chunks = newSeq[uint32]()
   var count = 0
   var chunk: array[4, uint8]
@@ -1202,33 +1199,42 @@ func fromBytesBE*(data: seq[uint8]): BigInt =
       if count >= 4:
         chunks.add(cast[uint32](chunk))
         count = 0
+  if count != 0:
+    while count <= 3:
+      chunk[count] = 0
+      inc count
+    if count >= 3:
+      chunks.add(cast[uint32](chunk))
   return initBigInt(chunks)
 
 func fromBytesLE*(data: seq[uint8]): BigInt =
   ## Convert an integer encoded as little endian bytes to BigInt
   ## Data length must be divisible by 4
 
-  if len(data) mod 4 != 0:
-    raise newException(ValueError, "Data needs to be divisible by 4")
-
   var chunks = newSeq[uint32]()
   var count = 0
   var chunk: array[4, uint8]
 
   when cpuEndian == littleEndian:
-    for i in mitemsReversed(data):
-      chunk[count] = i
-      inc count
-      if count >= 4:
-        chunks.add(cast[uint32](chunk))
-        count = 0
-  else:
     for i in data:
       chunk[count] = i
       inc count
       if count >= 4:
         chunks.add(cast[uint32](chunk))
         count = 0
+  else:
+    for i in mitemsReversed(data):
+      chunk[count] = i
+      inc count
+      if count >= 4:
+        chunks.add(cast[uint32](chunk))
+        count = 0
+  if count != 0:
+    while count <= 3:
+      chunk[count] = 0
+      inc count
+    if count >= 3:
+      chunks.add(cast[uint32](chunk))
   return initBigInt(chunks)
 
 func toBytesLE*(a: BigInt): seq[uint8] =

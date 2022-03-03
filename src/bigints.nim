@@ -1241,7 +1241,7 @@ func toBytesLE*(a: BigInt): seq[uint8] =
 
   when cpuEndian == bigEndian:
     for limb in mitemsReversed(a.limbs):
-      result.add(cast[array[4, uint8]](limb)[0..3])
+      result.add(cast[array[4, uint8]](limb)[0..3].reversed())
   else:
     for limb in a.limbs:
       result.add(cast[array[4, uint8]](limb)[0..3])
@@ -1250,7 +1250,8 @@ func toBytesBE*(a: BigInt): seq[uint8] =
 
   when cpuEndian == littleEndian:
     for limb in mitemsReversed(a.limbs):
-      result.add(cast[array[4, uint8]](limb)[0..3])
+      result.add(cast[array[4, uint8]](limb)[0..3].reversed())
   else:
     for limb in a.limbs:
       result.add(cast[array[4, uint8]](limb)[0..3])
+

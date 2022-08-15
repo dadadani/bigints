@@ -1205,70 +1205,71 @@ iterator mitemsReversed[T](a: openarray[T]): T =
     yield a[i]
     dec i
 
+func chunkReverse*(data: array[4, uint8]): array[4, uint8] =
+    result[0] = data[3]
+    result[1] = data[2]
+    result[2] = data[1]
+    result[3] = data[0]
+
 func fromBytesBE*(data: seq[uint8]): BigInt =
   ## Convert an integer encoded as big endian bytes to BigInt
-  ## Data length must be divisible by 4
 
   var chunks = newSeq[uint32]()
   var count = 0
   var chunk: array[4, uint8]
 
-  when cpuEndian == littleEndian:
-    for i in mitemsReversed(data):
+  for i in mitemsReversed(data):
       chunk[count] = i
       inc count
       if count >= 4:
-        chunks.add(cast[uint32](chunk))
-        count = 0
-  else:
-    for i in data:
-      chunk[count] = i
-      inc count
-      if count >= 4:
-        chunks.add(cast[uint32](chunk))
+        when cpuEndian == littleEndian:
+          chunks.add(cast[uint32](chunk))
+        else:
+          chunks.add(cast[uint32](chunk.chunkReverse()))
         count = 0
   if count != 0:
     while count <= 3:
       chunk[count] = 0
       inc count
     if count >= 3:
-      chunks.add(cast[uint32](chunk))
+      when cpuEndian == bigEndian:
+        chunks.add(cast[uint32](chunk.chunkReverse()))
+      else:
+        chunks.add(cast[uint32](chunk))
+
   return initBigInt(chunks)
 
 func fromBytesLE*(data: seq[uint8]): BigInt =
   ## Convert an integer encoded as little endian bytes to BigInt
-  ## Data length must be divisible by 4
 
   var chunks = newSeq[uint32]()
   var count = 0
   var chunk: array[4, uint8]
 
-  when cpuEndian == littleEndian:
-    for i in data:
+  for i in data:
       chunk[count] = i
       inc count
       if count >= 4:
-        chunks.add(cast[uint32](chunk))
-        count = 0
-  else:
-    for i in mitemsReversed(data):
-      chunk[count] = i
-      inc count
-      if count >= 4:
-        chunks.add(cast[uint32](chunk))
+        when cpuEndian == littleEndian:
+          chunks.add(cast[uint32](chunk))
+        else:
+          chunks.add(cast[uint32](chunk.chunkReverse()))
         count = 0
   if count != 0:
     while count <= 3:
       chunk[count] = 0
       inc count
     if count >= 3:
-      chunks.add(cast[uint32](chunk))
+      when cpuEndian == bigEndian:
+        chunks.add(cast[uint32](chunk.chunkReverse()))
+      else:
+        chunks.add(cast[uint32](chunk))
   return initBigInt(chunks)
 
 func toBytesLE*(a: BigInt): seq[uint8] =
 
   when cpuEndian == bigEndian:
-    for limb in mitemsReversed(a.limbs):
+    for limb in a.limbs:
       result.add(cast[array[4, uint8]](limb)[0..3].reversed())
   else:
     for limb in a.limbs:
@@ -1280,6 +1281,6 @@ func toBytesBE*(a: BigInt): seq[uint8] =
     for limb in mitemsReversed(a.limbs):
       result.add(cast[array[4, uint8]](limb)[0..3].reversed())
   else:
-    for limb in a.limbs:
+    for limb in mitemsReversed(a.limbs):
       result.add(cast[array[4, uint8]](limb)[0..3])
 

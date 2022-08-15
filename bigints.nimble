@@ -24,3 +24,4 @@ task checkExamples, "Check examples":
   for example in listFiles("examples"):
     if example.endsWith(".nim"):
       exec "nim check --hints:off " & example
+

@@ -16,11 +16,7 @@ task test, "Test bigints":
     echo "testing " & backend & " backend"
     for gc in ["refc", "arc", "orc"]:
       echo "  using " & gc & " GC"
-<<<<<<< HEAD
-      for file in ["tbigints.nim", "tbugs.nim", "tbytesconversion.nim"]:
-=======
-      for file in ["tbigints.nim", "tbugs.nim", "trandom.nim"]:
->>>>>>> upstream/master
+      for file in ["tbigints.nim", "tbugs.nim", "trandom.nim", "tbytesconversion.nim"]:
         exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " --gc:" & gc & " tests/" & file
       exec "nim doc --hints:off --backend:" & backend & " --gc:" & gc & " src/bigints.nim"
 
